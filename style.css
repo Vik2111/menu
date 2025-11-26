@@ -58,30 +58,6 @@ header {
 .nav-btn {
     background: none;
     border: 1px solid var(--border-color);
-    padding: 8px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.9rem;
-}
-
-.actions {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-}
-
-.action-btn {
-    padding: 8px 16px;
-    border-radius: 6px;
-    border: 1px solid var(--border-color);
-    background: white;
-    cursor: pointer;
-    font-size: 0.9rem;
-}
-
-/* Grid */
-.week-grid {
-    display: grid;
     grid-template-columns: 1fr;
     gap: 16px;
 }

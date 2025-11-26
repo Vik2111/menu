@@ -1,12 +1,18 @@
 <!DOCTYPE html>
 <html lang="ru">
 
+<!DOCTYPE html>
+<html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>План меню на неделю</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4a90e2">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2921/2921822.png">
 </head>
 
 <body>
@@ -18,10 +24,11 @@
                 <button id="nextWeek" class="nav-btn">Следующая →</button>
             </div>
             <div class="actions">
-                <button id="downloadBtn" class="action-btn primary-outline">Скачать меню</button>
-                <button id="settingsBtn" class="action-btn secondary" title="Настройки блюд">⚙️ Блюда</button>
-                <button id="exportBtn" class="action-btn secondary">Экспорт</button>
-                <button id="importBtn" class="action-btn secondary">Импорт</button>
+                <button id="shareBtn" class="action-btn primary" title="Поделиться в мессенджере">📤 Отправить</button>
+                <button id="downloadBtn" class="action-btn primary-outline" title="Скачать как файл">💾 Скачать</button>
+                <button id="settingsBtn" class="action-btn secondary" title="Настройки блюд">⚙️</button>
+                <button id="exportBtn" class="action-btn secondary" title="Экспорт данных">Экспорт</button>
+                <button id="importBtn" class="action-btn secondary" title="Импорт данных">Импорт</button>
                 <input type="file" id="importFile" style="display: none" accept=".json">
             </div>
         </header>
@@ -87,6 +94,13 @@
     </div>
 
     <script src="script.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./service-worker.js')
+                .then(reg => console.log('Service Worker registered'))
+                .catch(err => console.log('Service Worker registration failed', err));
+        }
+    </script>
 </body>
 
 </html>

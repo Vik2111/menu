@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const importBtn = document.getElementById('importBtn');
     const importFile = document.getElementById('importFile');
     const downloadBtn = document.getElementById('downloadBtn');
+    const shareBtn = document.getElementById('shareBtn');
 
     // Dish DB Elements
     const settingsBtn = document.getElementById('settingsBtn');
@@ -135,6 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
     importBtn.addEventListener('click', () => importFile.click());
     importFile.addEventListener('change', importData);
     downloadBtn.addEventListener('click', downloadOfflineView);
+    shareBtn.addEventListener('click', shareMenu);
 
     // Dish DB Listeners
     settingsBtn.addEventListener('click', openDbModal);
@@ -401,6 +403,52 @@ document.addEventListener('DOMContentLoaded', () => {
             updateDishSelect();
         }
     };
+
+    function shareMenu() {
+        const startOfWeek = getStartOfWeek(currentDate);
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(endOfWeek.getDate() + 6);
+
+        let text = `📅 Меню на неделю (${formatDisplayDate(startOfWeek)} - ${formatDisplayDate(endOfWeek)})\n\n`;
+
+        for (let i = 0; i < 7; i++) {
+            const dayDate = new Date(startOfWeek);
+            dayDate.setDate(startOfWeek.getDate() + i);
+            const dateKey = formatDateKey(dayDate);
+
+            if (menuData[dateKey]) {
+                const dayName = daysOfWeek[dayDate.getDay()];
+                let hasMeals = false;
+                let dayText = `🔹 ${dayName}:\n`;
+
+                Object.entries(mealTypes).forEach(([type, label]) => {
+                    if (menuData[dateKey][type] && menuData[dateKey][type].length > 0) {
+                        dayText += `   ${label}: ${menuData[dateKey][type].join(', ')}\n`;
+                        hasMeals = true;
+                    }
+                });
+
+                if (hasMeals) {
+                    text += dayText + '\n';
+                }
+            }
+        }
+
+        text += '\nСоставлено в "Моё Меню"';
+
+        if (navigator.share) {
+            navigator.share({
+                title: 'Моё меню',
+                text: text
+            }).catch(console.error);
+        } else {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Меню скопировано в буфер обмена!');
+            }).catch(() => {
+                alert('Не удалось скопировать меню.');
+            });
+        }
+    }
 
     function exportData() {
         const dataStr = JSON.stringify(menuData);
