@@ -19,6 +19,7 @@
             </div>
             <div class="actions">
                 <button id="downloadBtn" class="action-btn primary-outline">Скачать меню</button>
+                <button id="settingsBtn" class="action-btn secondary" title="Настройки блюд">⚙️ Блюда</button>
                 <button id="exportBtn" class="action-btn secondary">Экспорт</button>
                 <button id="importBtn" class="action-btn secondary">Импорт</button>
                 <input type="file" id="importFile" style="display: none" accept=".json">
@@ -55,26 +56,32 @@
                 <div class="form-group">
                     <label for="dishSelect">Блюдо:</label>
                     <select id="dishSelect">
-                        <option value="">Выберите блюдо...</option>
-                        <option value="Омлет">Омлет</option>
-                        <option value="Яичница">Яичница</option>
-                        <option value="Сырники">Сырники</option>
-                        <option value="Бутерброды">Бутерброды</option>
-                        <option value="Каша">Каша</option>
-                        <option value="Суп">Суп</option>
-                        <option value="Борщ">Борщ</option>
-                        <option value="Солянка">Солянка</option>
-                        <option value="Котлеты">Котлеты</option>
-                        <option value="Макароны">Макароны</option>
-                        <option value="Пюре">Пюре</option>
-                        <option value="Салат">Салат</option>
-                        <option value="other">Другое...</option>
+                        <!-- Populated by JS -->
                     </select>
                 </div>
                 <div class="form-group hidden" id="customDishGroup">
                     <input type="text" id="customDishInput" placeholder="Введите название блюда">
                 </div>
                 <button id="saveDishBtn" class="primary-btn full-width">Добавить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dish Database Modal -->
+    <div id="dishDbModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Редактор блюд</h3>
+                <button id="closeDbModal" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group" style="display: flex; gap: 8px;">
+                    <input type="text" id="newDishInput" placeholder="Новое блюдо...">
+                    <button id="addDishToDbBtn" class="primary-btn" style="width: auto;">+</button>
+                </div>
+                <div id="dishList" class="dish-list">
+                    <!-- Dishes will be listed here -->
+                </div>
             </div>
         </div>
     </div>

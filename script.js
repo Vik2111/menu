@@ -3,6 +3,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentDate = new Date();
     let menuData = JSON.parse(localStorage.getItem('weeklyMenuData')) || {};
 
+    // Default dishes if not in storage
+    const defaultDishes = [
+        "Омлет", "Яичница", "Сырники", "Бутерброды", "Каша",
+        "Суп", "Борщ", "Солянка", "Котлеты", "Макароны",
+        "Пюре", "Салат"
+    ];
+    let dishDatabase = JSON.parse(localStorage.getItem('dishDatabase')) || defaultDishes;
+
     // DOM Elements
     const weekGrid = document.getElementById('weekGrid');
     const currentWeekLabel = document.getElementById('currentWeekLabel');
@@ -22,6 +30,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const importFile = document.getElementById('importFile');
     const downloadBtn = document.getElementById('downloadBtn');
 
+    // Dish DB Elements
+    const settingsBtn = document.getElementById('settingsBtn');
+    const dishDbModal = document.getElementById('dishDbModal');
+    const closeDbModalBtn = document.getElementById('closeDbModal');
+    const newDishInput = document.getElementById('newDishInput');
+    const addDishToDbBtn = document.getElementById('addDishToDbBtn');
+    const dishList = document.getElementById('dishList');
+
     // Constants
     const daysOfWeek = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
     const mealTypes = {
@@ -30,8 +46,70 @@ document.addEventListener('DOMContentLoaded', () => {
         'dinner': 'Ужин'
     };
 
+    // Drag and Drop Handlers (Hoisted)
+    function handleDragStart(e, dateKey, type, index, dishName) {
+        e.dataTransfer.setData('text/plain', JSON.stringify({
+            dateKey, type, index, dishName
+        }));
+        e.target.classList.add('dragging');
+        e.stopPropagation();
+    }
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.currentTarget.querySelector('.meal-content').classList.add('drag-over');
+    }
+
+    function handleDragLeave(e) {
+        e.currentTarget.querySelector('.meal-content').classList.remove('drag-over');
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        const targetSlot = e.currentTarget;
+        targetSlot.querySelector('.meal-content').classList.remove('drag-over');
+
+        const dataStr = e.dataTransfer.getData('text/plain');
+        if (!dataStr) return;
+
+        const data = JSON.parse(dataStr);
+        const targetDate = targetSlot.dataset.date;
+        const targetType = targetSlot.dataset.type;
+
+        // Don't do anything if dropped on same slot
+        if (data.dateKey === targetDate && data.type === targetType) return;
+
+        // Add to new slot
+        if (!menuData[targetDate]) menuData[targetDate] = {};
+        if (!menuData[targetDate][targetType]) menuData[targetDate][targetType] = [];
+        menuData[targetDate][targetType].push(data.dishName);
+
+        // Remove from old slot
+        if (menuData[data.dateKey] && menuData[data.dateKey][data.type]) {
+            menuData[data.dateKey][data.type].splice(data.index, 1);
+            // Cleanup
+            if (menuData[data.dateKey][data.type].length === 0) delete menuData[data.dateKey][data.type];
+            if (Object.keys(menuData[data.dateKey]).length === 0) delete menuData[data.dateKey];
+        }
+
+        localStorage.setItem('weeklyMenuData', JSON.stringify(menuData));
+        renderWeek();
+    }
+
+    // Expose to window for HTML attributes
+    window.handleDragStart = handleDragStart;
+    window.handleDragOver = handleDragOver;
+    window.handleDragLeave = handleDragLeave;
+    window.handleDrop = handleDrop;
+
     // Initialization
-    renderWeek();
+    migrateData();
+    try {
+        renderWeek();
+    } catch (e) {
+        console.error("Render error:", e);
+    }
+    updateDishSelect();
 
     // Event Listeners
     prevWeekBtn.addEventListener('click', () => changeWeek(-7));
@@ -58,7 +136,55 @@ document.addEventListener('DOMContentLoaded', () => {
     importFile.addEventListener('change', importData);
     downloadBtn.addEventListener('click', downloadOfflineView);
 
+    // Dish DB Listeners
+    settingsBtn.addEventListener('click', openDbModal);
+    closeDbModalBtn.addEventListener('click', closeDbModal);
+    dishDbModal.addEventListener('click', (e) => {
+        if (e.target === dishDbModal) closeDbModal();
+    });
+    addDishToDbBtn.addEventListener('click', addDishToDb);
+
     // Functions
+    function migrateData() {
+        // Convert old string format to array format
+        let hasChanges = false;
+        Object.keys(menuData).forEach(dateKey => {
+            Object.keys(menuData[dateKey]).forEach(mealType => {
+                const value = menuData[dateKey][mealType];
+                if (typeof value === 'string') {
+                    menuData[dateKey][mealType] = [value];
+                    hasChanges = true;
+                }
+            });
+        });
+        if (hasChanges) {
+            localStorage.setItem('weeklyMenuData', JSON.stringify(menuData));
+        }
+    }
+
+    function updateDishSelect() {
+        // Save current selection if possible
+        const currentVal = dishSelect.value;
+
+        dishSelect.innerHTML = '<option value="">Выберите блюдо...</option>';
+
+        dishDatabase.sort().forEach(dish => {
+            const option = document.createElement('option');
+            option.value = dish;
+            option.textContent = dish;
+            dishSelect.appendChild(option);
+        });
+
+        const otherOption = document.createElement('option');
+        otherOption.value = 'other';
+        otherOption.textContent = 'Другое...';
+        dishSelect.appendChild(otherOption);
+
+        if (currentVal && (dishDatabase.includes(currentVal) || currentVal === 'other')) {
+            dishSelect.value = currentVal;
+        }
+    }
+
     function getStartOfWeek(date) {
         const d = new Date(date);
         const day = d.getDay();
@@ -120,14 +246,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 const slot = document.createElement('div');
                 slot.className = 'meal-slot';
 
-                const dish = menuData[dateKey]?.[type] || '';
-                const isFilled = !!dish;
+                // Drag Drop Attributes
+                slot.dataset.date = dateKey;
+                slot.dataset.type = type;
+                slot.ondragover = handleDragOver;
+                slot.ondragleave = handleDragLeave;
+                slot.ondrop = handleDrop;
+
+                const dishes = menuData[dateKey]?.[type] || [];
+                const isFilled = dishes.length > 0;
+
+                let dishesHtml = '';
+                if (isFilled) {
+                    dishesHtml = dishes.map((dish, index) => `
+                        <div class="dish-item" draggable="true" ondragstart="handleDragStart(event, '${dateKey}', '${type}', ${index}, '${dish}')">
+                            <span>${dish}</span>
+                            <span class="delete-dish" onclick="deleteDish(event, '${dateKey}', '${type}', ${index})">&times;</span>
+                        </div>
+                    `).join('');
+                }
 
                 slot.innerHTML = `
                     <div class="meal-label">${label}</div>
                     <div class="meal-content ${isFilled ? 'filled' : ''}" onclick="openEditModal('${dateKey}', '${type}')">
-                        <span>${dish || ''}</span>
-                        ${isFilled ? `<span class="delete-dish" onclick="deleteDish(event, '${dateKey}', '${type}')">&times;</span>` : ''}
+                        ${dishesHtml}
                     </div>
                 `;
                 card.appendChild(slot);
@@ -153,22 +295,9 @@ document.addEventListener('DOMContentLoaded', () => {
         daySelect.value = dateKey;
         mealSelect.value = mealType;
 
-        const currentDish = menuData[dateKey]?.[mealType];
-        if (currentDish) {
-            // Check if it's in the standard list
-            const options = Array.from(dishSelect.options).map(o => o.value);
-            if (options.includes(currentDish)) {
-                dishSelect.value = currentDish;
-                customDishGroup.classList.add('hidden');
-            } else {
-                dishSelect.value = 'other';
-                customDishInput.value = currentDish;
-                customDishGroup.classList.remove('hidden');
-            }
-        } else {
-            dishSelect.value = '';
-            customDishGroup.classList.add('hidden');
-        }
+        // Reset dish selection
+        dishSelect.value = '';
+        customDishGroup.classList.add('hidden');
 
         openModal();
     };
@@ -188,28 +317,88 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!dishName) return;
 
+        // If it was a custom dish, ask to add to DB? 
+        // For now, just save to menu.
+
         if (!menuData[dateKey]) {
             menuData[dateKey] = {};
         }
-        menuData[dateKey][mealType] = dishName;
+
+        // Initialize array if not exists
+        if (!menuData[dateKey][mealType]) {
+            menuData[dateKey][mealType] = [];
+        }
+
+        // Add new dish
+        menuData[dateKey][mealType].push(dishName);
 
         localStorage.setItem('weeklyMenuData', JSON.stringify(menuData));
         renderWeek();
         closeModal();
     }
 
-    window.deleteDish = function (event, dateKey, mealType) {
+    window.deleteDish = function (event, dateKey, mealType, index) {
         event.stopPropagation(); // Prevent opening modal
         if (confirm('Удалить блюдо?')) {
-            if (menuData[dateKey]) {
-                delete menuData[dateKey][mealType];
-                // Cleanup empty dates
+            if (menuData[dateKey] && menuData[dateKey][mealType]) {
+                menuData[dateKey][mealType].splice(index, 1);
+
+                // Cleanup empty arrays/objects
+                if (menuData[dateKey][mealType].length === 0) {
+                    delete menuData[dateKey][mealType];
+                }
                 if (Object.keys(menuData[dateKey]).length === 0) {
                     delete menuData[dateKey];
                 }
+
                 localStorage.setItem('weeklyMenuData', JSON.stringify(menuData));
                 renderWeek();
             }
+        }
+    };
+
+    // Dish Database Functions
+    function openDbModal() {
+        renderDishList();
+        dishDbModal.classList.remove('hidden');
+    }
+
+    function closeDbModal() {
+        dishDbModal.classList.add('hidden');
+    }
+
+    function renderDishList() {
+        dishList.innerHTML = '';
+        dishDatabase.sort().forEach((dish, index) => {
+            const item = document.createElement('div');
+            item.className = 'dish-list-item';
+            item.innerHTML = `
+                <span>${dish}</span>
+                <span class="delete-db-dish" onclick="deleteDbDish(${index})">&times;</span>
+            `;
+            dishList.appendChild(item);
+        });
+    }
+
+    function addDishToDb() {
+        const name = newDishInput.value.trim();
+        if (name && !dishDatabase.includes(name)) {
+            dishDatabase.push(name);
+            localStorage.setItem('dishDatabase', JSON.stringify(dishDatabase));
+            newDishInput.value = '';
+            renderDishList();
+            updateDishSelect();
+        } else if (dishDatabase.includes(name)) {
+            alert('Такое блюдо уже есть!');
+        }
+    }
+
+    window.deleteDbDish = function (index) {
+        if (confirm('Удалить это блюдо из списка?')) {
+            dishDatabase.splice(index, 1);
+            localStorage.setItem('dishDatabase', JSON.stringify(dishDatabase));
+            renderDishList();
+            updateDishSelect();
         }
     };
 
@@ -260,7 +449,7 @@ document.addEventListener('DOMContentLoaded', () => {
     --text-color: #333333;
     --text-secondary: #666666;
     --border-color: #e1e4e8;
-    --shadow: 0 2px 8px rgba(0,0,0,0.05);
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     --radius: 12px;
 }
 
@@ -275,7 +464,8 @@ body {
     background-color: var(--bg-color);
     color: var(--text-color);
     line-height: 1.5;
-    padding-bottom: 80px; /* Space for FAB */
+    padding-bottom: 80px;
+    /* Space for FAB */
 }
 
 .app-container {
@@ -375,34 +565,93 @@ header {
 }
 
 .meal-content {
-    min-height: 32px;
-    padding: 6px 10px;
+    min-height: 40px;
+    padding: 8px;
     background: #f8f9fa;
     border-radius: 6px;
     border: 1px dashed var(--border-color);
     font-size: 0.95rem;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    gap: 6px;
 }
 
 .meal-content.filled {
+    background: #f8f9fa; /* Keep neutral background for container */
+    border: 1px solid var(--border-color);
+    border-style: solid;
+}
+
+.dish-item {
     background: #eef6ff;
     border: 1px solid #b3d7ff;
-    border-style: solid;
+    border-radius: 4px;
+    padding: 4px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.dish-item:hover {
+    background: #dbeafe;
 }
 
 .delete-dish {
     color: #ff4d4f;
     cursor: pointer;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     line-height: 1;
-    padding: 0 4px;
-    display: none;
+    padding: 2px 6px;
+    margin-left: 8px;
+    border-radius: 4px;
 }
 
-.meal-content.filled .delete-dish {
-    display: block;
+.delete-dish:hover {
+    background: rgba(255, 77, 79, 0.1);
+}
+
+/* Dish Database Editor */
+.dish-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-top: 16px;
+}
+
+.dish-list-item {
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dish-list-item:last-child {
+    border-bottom: none;
+}
+
+.dish-list-item:hover {
+    background-color: #f8f9fa;
+}
+
+.delete-db-dish {
+    color: #ff4d4f;
+    cursor: pointer;
+    padding: 4px;
+    font-size: 1.2rem;
+}
+
+/* Drag and Drop Styles */
+.meal-content.drag-over {
+    background: #e6f7ff;
+    border: 2px dashed var(--primary-color);
+}
+
+.dish-item.dragging {
+    opacity: 0.5;
 }
 
 /* FAB */
@@ -437,7 +686,7 @@ header {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0, 0, 0, 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -457,7 +706,7 @@ header {
     max-width: 400px;
     border-radius: var(--radius);
     padding: 24px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 
 .modal-header {
@@ -486,7 +735,8 @@ header {
     font-size: 0.9rem;
 }
 
-.form-group select, .form-group input {
+.form-group select,
+.form-group input {
     width: 100%;
     padding: 10px;
     border: 1px solid var(--border-color);
@@ -520,7 +770,7 @@ header {
         flex-direction: row;
         justify-content: space-between;
     }
-    
+
     .week-grid {
         grid-template-columns: repeat(2, 1fr);
     }
@@ -541,11 +791,29 @@ header {
         const deleteBtns = gridClone.querySelectorAll('.delete-dish');
         deleteBtns.forEach(btn => btn.remove());
 
+        // Remove DB delete buttons if any
+        const dbDeleteBtns = gridClone.querySelectorAll('.delete-db-dish');
+        dbDeleteBtns.forEach(btn => btn.remove());
+
         // Remove onclick attributes
         const clickableElements = gridClone.querySelectorAll('[onclick]');
         clickableElements.forEach(el => {
             el.removeAttribute('onclick');
             el.style.cursor = 'default';
+        });
+
+        // Remove drag events
+        const draggableElements = gridClone.querySelectorAll('[draggable]');
+        draggableElements.forEach(el => {
+            el.removeAttribute('draggable');
+            el.removeAttribute('ondragstart');
+        });
+
+        const dropZones = gridClone.querySelectorAll('.meal-slot');
+        dropZones.forEach(el => {
+            el.removeAttribute('ondragover');
+            el.removeAttribute('ondragleave');
+            el.removeAttribute('ondrop');
         });
 
         // 4. Construct HTML

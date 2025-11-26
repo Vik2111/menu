@@ -6,7 +6,7 @@
     --text-color: #333333;
     --text-secondary: #666666;
     --border-color: #e1e4e8;
-    --shadow: 0 2px 8px rgba(0,0,0,0.05);
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     --radius: 12px;
 }
 
@@ -21,7 +21,8 @@ body {
     background-color: var(--bg-color);
     color: var(--text-color);
     line-height: 1.5;
-    padding-bottom: 80px; /* Space for FAB */
+    padding-bottom: 80px;
+    /* Space for FAB */
 }
 
 .app-container {
@@ -121,34 +122,52 @@ header {
 }
 
 .meal-content {
-    min-height: 32px;
-    padding: 6px 10px;
+    min-height: 40px;
+    padding: 8px;
     background: #f8f9fa;
     border-radius: 6px;
     border: 1px dashed var(--border-color);
     font-size: 0.95rem;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    gap: 6px;
 }
 
 .meal-content.filled {
+    background: #f8f9fa;
+    /* Keep neutral background for container */
+    border: 1px solid var(--border-color);
+    border-style: solid;
+}
+
+.dish-item {
     background: #eef6ff;
     border: 1px solid #b3d7ff;
-    border-style: solid;
+    border-radius: 4px;
+    padding: 4px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.dish-item:hover {
+    background: #dbeafe;
 }
 
 .delete-dish {
     color: #ff4d4f;
     cursor: pointer;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     line-height: 1;
-    padding: 0 4px;
-    display: none;
+    padding: 2px 6px;
+    margin-left: 8px;
+    border-radius: 4px;
 }
 
-.meal-content.filled .delete-dish {
-    display: block;
+.delete-dish:hover {
+    background: rgba(255, 77, 79, 0.1);
 }
 
 /* FAB */
@@ -183,7 +202,7 @@ header {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0, 0, 0, 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -203,7 +222,7 @@ header {
     max-width: 400px;
     border-radius: var(--radius);
     padding: 24px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 
 .modal-header {
@@ -232,7 +251,204 @@ header {
     font-size: 0.9rem;
 }
 
-.form-group select, .form-group input {
+.form-group select,
+.form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+}
+
+.primary-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.full-width {
+    width: 100%;
+}
+
+.week-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
+
+/* Day Card */
+.day-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow);
+}
+
+.day-header {
+    font-weight: 600;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+}
+
+.day-header.today {
+    color: var(--primary-color);
+}
+
+.meal-slot {
+    margin-bottom: 12px;
+}
+
+.meal-slot:last-child {
+    margin-bottom: 0;
+}
+
+.meal-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.meal-content {
+    min-height: 40px;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border: 1px dashed var(--border-color);
+    font-size: 0.95rem;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.meal-content.filled {
+    background: #f8f9fa;
+    /* Keep neutral background for container */
+    border: 1px solid var(--border-color);
+    border-style: solid;
+}
+
+.dish-item {
+    background: #eef6ff;
+    border: 1px solid #b3d7ff;
+    border-radius: 4px;
+    padding: 4px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.dish-item:hover {
+    background: #dbeafe;
+}
+
+.delete-dish {
+    color: #ff4d4f;
+    cursor: pointer;
+    font-size: 1.1rem;
+    line-height: 1;
+    padding: 2px 6px;
+    margin-left: 8px;
+    border-radius: 4px;
+}
+
+.delete-dish:hover {
+    background: rgba(255, 77, 79, 0.1);
+}
+
+/* FAB */
+.fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    font-size: 2rem;
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    transition: transform 0.2s;
+}
+
+.fab:active {
+    transform: scale(0.95);
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 1;
+    transition: opacity 0.3s;
+}
+
+.modal.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.modal-content {
+    background: white;
+    width: 90%;
+    max-width: 400px;
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 4px;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.form-group select,
+.form-group input {
     width: 100%;
     padding: 10px;
     border: 1px solid var(--border-color);
@@ -260,13 +476,55 @@ header {
     display: none;
 }
 
+/* Dish Database Editor */
+.dish-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-top: 16px;
+}
+
+.dish-list-item {
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dish-list-item:last-child {
+    border-bottom: none;
+}
+
+.dish-list-item:hover {
+    background-color: #f8f9fa;
+}
+
+.delete-db-dish {
+    color: #ff4d4f;
+    cursor: pointer;
+    padding: 4px;
+    font-size: 1.2rem;
+}
+
+/* Drag and Drop Styles */
+.meal-content.drag-over {
+    background: #e6f7ff;
+    border: 2px dashed var(--primary-color);
+}
+
+.dish-item.dragging {
+    opacity: 0.5;
+}
+
 /* Desktop Responsive */
 @media (min-width: 768px) {
     header {
         flex-direction: row;
         justify-content: space-between;
     }
-    
+
     .week-grid {
         grid-template-columns: repeat(2, 1fr);
     }
